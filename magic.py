@@ -7,6 +7,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from PIL import ImageTk, Image
+from tkinter import simpledialog
 
 """
 Database Format:
@@ -16,7 +17,7 @@ Category is defaulted to "Cards" with placement at the bottom of the category.
 """
 
 PAGEWAIT = 2 #future support for changing time spent waiting for webpages to load 
-ATTRSEP = "~" #future support for changing seperator for database items
+SEP = "~" #future support for changing seperator for database items
 SCALE = 1 #future support for scaling window size
 
 class card:
@@ -122,16 +123,44 @@ def addCard():
     deckDisplay.insert(tk.END, new.name)
 
 def delCard():
-    print("NYI")
+    global deckDisplay
+    global fileName
+    name = deckDisplay.get(deckDisplay.curselection(), deckDisplay.curselection())[0]
+    file = open(fileName, "r")
+    tempFile = open("temp.txt", "w")
+    lineNum = 0
+    for line in file:
+        lineNum += 1
+        card = line.split(SEP)
+        if card[0] != name or lineNum == 1:
+            tempFile.write(line)
+        else:
+            name = "null"
+    tempFile.close()
+    file.close()
+    file = open(fileName, "w")
+    tempFile = open("temp.txt", "r")
+    for line in tempFile:
+        file.write(line)
+    tempFile.close()
+    file.close()
+    deckDisplay.delete(deckDisplay.curselection()[0])
+
+def createDatabase():
+    name = simpledialog.askstring(title="Database Name", prompt="Enter the name for the new database:")
+    file = open(name + ".txt", "w")
+    file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n")
+    file.close()
 
 main = tk.Tk()
 main.geometry("1400x700")
 main.title("Mabic")
 menu = tk.Menu(main)
+menu.add_command(label = "Create New Database", command = createDatabase)
 menu.add_command(label = "Load Database File", command = loadDatabase)
 menu.add_command(label = "Update Database Prices", command = updateDatabase)
 main.config(menu = menu)
-seperator = tk.Label(main).grid(row = 4, column = 0)
+delButton = tk.Button(main, text = "Delete card", command = delCard).grid(row = 4, column = 0)
 addButton = tk.Button(main, text = "Add new card", command = addCard).grid(row = 5, column = 0)
 global cardLink
 cardLink = tk.Entry(main, width = 50)
