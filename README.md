@@ -6,7 +6,6 @@ Python 3, libraries: Pillow and Selenium.
 ## How to Use
 Run the magic.py file. Then click Create New Database in the top left and enter the name of the database file to create. Click Load Database File to the right of the previous button and select the new file. Enter the TCGPlayer URL of cards in the text box at the bottom of the program, click Add new card, and wait for the operation to complete. One can then select the card in the list and click Display card, wait a few moments, and then have the card be displayed on the right of the screen. Selected cards can also be deleted via the Delete card button.
 ## Future Improvements
-- Correct database price updating
 - Card categories
 - Card sorting
 - Counts for cards rather than multiple entries of the same one
