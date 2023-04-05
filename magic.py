@@ -26,8 +26,8 @@ quantity of card (int)
 Category is defaulted to "Cards" with placement at the bottom of the category.
 """
 
+global PAGEWAIT 
 PAGEWAIT = 2 #future support for changing time spent waiting for webpages to load 
-SEP = "~" #future support for changing seperator for database items
 SCALE = 1 #future support for scaling window size
 
 #Defines data attributes common to cards, as well as some useful string formatting
@@ -99,13 +99,12 @@ def loadDatabase():
         deckDisplay.insert(tk.END, item.name)
     file.close()
     if not empty:
-        global oldDate
         oldDate.set("Oldest database item is from " + oldest.ctime() + ".")
     
 #Updates prices in the database
 def updateDatabase():
+    global PAGEWAIT 
     global cards
-    global oldDate
     global fileName
     oldDate.set("Oldest database item is from " + datetime.now().ctime() + ".")
     file = open(fileName, "w")
@@ -125,6 +124,7 @@ def updateDatabase():
 
 #Scrapes image for card selected from TCGPlayer and displays in GUI
 def genImage():
+    global PAGEWAIT 
     global deckDisplay
     global cards
     card = cards[deckDisplay.curselection()[0]]
@@ -145,6 +145,7 @@ def genImage():
     
 #Adds card from TCGPlayer URL
 def addCard():
+    global PAGEWAIT 
     global fileName
     global cardLink
     global deckDisplay
@@ -212,15 +213,36 @@ def createDatabase():
     file = open(name + ".txt", "w")
     file.close()
 
+#Opens settings menu pop-up
+def openSettings():
+    global waitEntry
+    global settings
+    global PAGEWAIT
+    settings = tk.Toplevel(main)
+    settings.geometry("400x400")
+    settings.title("Settings")
+    waitLabel = tk.Label(settings, text = 'Max time to let webpages to load').grid(row = 0, column = 0)
+    waitEntry = tk.Entry(settings, width = 3)
+    waitEntry.insert(0, PAGEWAIT)
+    waitEntry.grid(row = 1, column = 0)
+    settingsSave = tk.Button(settings, text = 'Save', command = saveSettings).grid(row = 2, column = 1)
+    
+def saveSettings():
+    global waitEntry
+    global settings
+    global PAGEWAIT
+    PAGEWAIT = int(waitEntry.get())
+    settings.destroy()
+
 #Main entry point for program
 main = tk.Tk()
-global oldDate
 oldDate = tk.StringVar()
 lastUpdated = tk.Label(main, textvariable=oldDate).grid(row = 0, column = 0)
 main.geometry("1400x700") #Will be scaled in future via a setting
 main.title("Magic")
 menu = tk.Menu(main)
 #Top menu of program
+menu.add_command(label = "Settings", command = openSettings)
 menu.add_command(label = "Create New Database", command = createDatabase)
 menu.add_command(label = "Load Database File", command = loadDatabase)
 menu.add_command(label = "Update Database Prices", command = updateDatabase)
