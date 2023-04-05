@@ -99,16 +99,33 @@ def loadDatabase():
         deckDisplay.insert(tk.END, item.name)
     file.close()
     if not empty:
-        lastUpdated = tk.Label(main, text = "Oldest database item is from " + oldest.ctime() + ".").grid(row = 0, column = 0)
+        global oldDate
+        oldDate.set("Oldest database item is from " + oldest.ctime() + ".")
     
-#placeholder
+#Updates prices in the database
 def updateDatabase():
-    print("Placeholder")
+    global cards
+    global oldDate
+    global fileName
+    oldDate.set("Oldest database item is from " + datetime.now().ctime() + ".")
+    file = open(fileName, "w")
+    file.close()
+    for card in cards:
+        driver = webdriver.Chrome()
+        driver.get(card.url)
+        driver.implicitly_wait(PAGEWAIT) #Necessary to let page load
+        price = driver.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/section[2]/section[1]/div/section[2]/span")
+        price = float(price.get_attribute("innerHTML")[1:])
+        mrktPrice = driver.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/section[3]/div/section[1]/table/tr[2]/td[2]/span")
+        mrktPrice = float(mrktPrice.get_attribute("innerHTML")[1:])
+        card.price = price
+        card.mrktPrice = mrktPrice
+        card.lastUpdate = datetime.strptime(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
+        card.save(fileName)
 
 #Scrapes image for card selected from TCGPlayer and displays in GUI
 def genImage():
     global deckDisplay
-    global fileName
     global cards
     card = cards[deckDisplay.curselection()[0]]
     print("Getting image from url: " + card.url) #Debug function
@@ -153,6 +170,7 @@ def addCard():
     print("Added card with data: " + new.getString()) #Debug function
     #Writes card to database file
     new.save(fileName)
+    cards.append(new)
     deckDisplay.insert(tk.END, new.name) #Adds card to listbox
 
 #Deletes card from listbox and database file. Only deleted based on name currently
@@ -196,6 +214,9 @@ def createDatabase():
 
 #Main entry point for program
 main = tk.Tk()
+global oldDate
+oldDate = tk.StringVar()
+lastUpdated = tk.Label(main, textvariable=oldDate).grid(row = 0, column = 0)
 main.geometry("1400x700") #Will be scaled in future via a setting
 main.title("Magic")
 menu = tk.Menu(main)
