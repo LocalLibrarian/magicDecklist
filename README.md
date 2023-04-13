@@ -8,8 +8,6 @@ Run the magic.py file. Then click Create New Database in the top left and enter 
 ## Future Improvements
 - Card categories
 - Card sorting
-- Counts for cards rather than multiple entries of the same one
-- Scaling for the UI via a setting
 - More information displayed on the selected card
 - Option to download images for all cards in the database for faster/offline display
 - Ability to purge downloads of all/selected card images
