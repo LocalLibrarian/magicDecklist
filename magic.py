@@ -171,23 +171,56 @@ def addCard():
     #Scrapes name, price, market price, card type, and rarity from webpage
     name = search.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/div/h1")
     name = name.get_attribute("innerHTML")
-    foil = False #temp, will allow specifying in future
-    price = search.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/section[2]/section[1]/div/section[2]/span")
-    price = float(price.get_attribute("innerHTML")[1:])
-    mrktPrice = search.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/section[3]/div/section[1]/table/tr[2]/td[2]/span")
-    mrktPrice = float(mrktPrice.get_attribute("innerHTML")[1:])
-    type = search.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/section[2]/section[3]/div/div/div/ul/li[3]/span")
-    type = type.get_attribute("innerHTML")
-    rarity = search.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/section[2]/section[3]/div/div/div/ul/li[1]/span")
-    rarity = rarity.get_attribute("innerHTML")
-    category = "Cards" #Temp, will allow specifying in future
-    place = 0 #Temp, will allow specifying in future
-    new = card(name, foil, cardLink.get(), price, mrktPrice, type, rarity, category, place, datetime.strptime(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S"), 1)
-    print("Added card with data: " + new.getString()) #Debug function
-    #Writes card to database file
-    new.save(fileName)
-    cards.append(new)
-    deckDisplay.insert(tk.END, new.name) #Adds card to listbox
+    found = False
+    for card in cards:
+        if card.name == name:
+            card.quantity += 1
+            updateQuantity(card)
+            found = True
+    if not found:
+        foil = False #temp, will allow specifying in future
+        price = search.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/section[2]/section[1]/div/section[2]/span")
+        price = float(price.get_attribute("innerHTML")[1:])
+        mrktPrice = search.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/section[3]/div/section[1]/table/tr[2]/td[2]/span")
+        mrktPrice = float(mrktPrice.get_attribute("innerHTML")[1:])
+        type = search.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/section[2]/section[3]/div/div/div/ul/li[3]/span")
+        type = type.get_attribute("innerHTML")
+        rarity = search.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/section[2]/section[3]/div/div/div/ul/li[1]/span")
+        rarity = rarity.get_attribute("innerHTML")
+        category = "Cards" #Temp, will allow specifying in future
+        place = 0 #Temp, will allow specifying in future
+        new = card(name, foil, cardLink.get(), price, mrktPrice, type, rarity, category, place, datetime.strptime(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S"), 1)
+        print("Added card with data: " + new.getString()) #Debug function
+        #Writes card to database file
+        new.save(fileName)
+        cards.append(new)
+        deckDisplay.insert(tk.END, new.name) #Adds card to listbox
+
+#Searches for card with selected name in database and edits quantity value
+def updateQuantity(card):
+    global fileName
+    file = open(fileName, "r")
+    tempFile = open("temp.txt", "w")
+    rpts = 0
+    for line in file:
+        if line.strip() == card.name:
+            rpts += 1
+        elif rpts > 0:
+            rpts += 1
+        if rpts == 11:
+            tempFile.write(str(card.quantity))
+        else:
+            tempFile.write(line)
+    tempFile.close()
+    file.close()
+    file = open(fileName, "w")
+    tempFile = open("temp.txt", "r")
+    for line in tempFile:
+        file.write(line)
+    file.write('\n')
+    tempFile.close()
+    file.close()
+    os.remove('temp.txt')
 
 #Deletes card from listbox and database file. Only deleted based on name currently
 def delCard():
@@ -196,11 +229,11 @@ def delCard():
     global cards
     card = cards[deckDisplay.curselection()[0]]
     card.quantity -= 1
-    file = open(fileName, "r")
-    tempFile = open("temp.txt", "w")
-    name = card.name
-    rpts = 0
     if card.quantity < 1:
+        file = open(fileName, "r")
+        tempFile = open("temp.txt", "w")
+        name = card.name
+        rpts = 0
         #Searches for card with selected name in database and writes all others to temp file
         for line in file:
             if line.strip() != name and rpts == 0 or rpts == 11:
@@ -217,28 +250,12 @@ def delCard():
             file.write(line)
         del cards[deckDisplay.curselection()[0]] #Deletes card from list of cards in memory
         deckDisplay.delete(deckDisplay.curselection()[0]) #Deletes selected card from listbox
-    else:
-        #Searches for card with selected name in database and decreases quantity value by 1
-        for line in file:
-            if line.strip() == name:
-                rpts += 1
-            elif rpts > 0:
-                rpts += 1
-            if rpts == 11:
-                tempFile.write(str(int(line) - 1))
-            else:
-                tempFile.write(line)
         tempFile.close()
         file.close()
-        file = open(fileName, "w")
-        tempFile = open("temp.txt", "r")
-        for line in tempFile:
-            file.write(line)
-        file.write('\n')
-    tempFile.close()
-    file.close()
-    os.remove('temp.txt')
-
+        os.remove('temp.txt')
+    else:
+       updateQuantity(card)
+    
 #Creates new .txt file so user doesn't have to do it manually
 def createDatabase():
     name = simpledialog.askstring(title="Database Name", prompt="Enter the name for the new database:")
