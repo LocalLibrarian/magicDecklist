@@ -12,5 +12,4 @@ Run the magic.py file. Then click Create New Database in the top left and enter 
 - More information displayed on the selected card
 - Option to download images for all cards in the database for faster/offline display
 - Ability to purge downloads of all/selected card images
-- Better debug functionality
 - Various code improvements
