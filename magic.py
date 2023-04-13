@@ -27,11 +27,21 @@ quantity of card (int)
 Category is defaulted to "Cards" with placement at the bottom of the category.
 """
 
-#default settings definition
+#Debug headers
+debugA = '\n---ADDED: '
+debugU = '\n---UPDATED: '
+debugD = '\n---DELETED: '
+debugS = '\n---SCRAPING: '
+debugR = '\n---READ: '
+debugC = '\n---CREATED FILE: '
+
+#Default settings definition
 global PAGEWAIT
 global SCALE
-PAGEWAIT = 2 #setting for how long to wait for webpages to load
-SCALE = 1 #scales some UI elements
+global DISPLAYUPDATE
+PAGEWAIT = 2 #Setting for how long to wait for webpages to load
+SCALE = 1 #Scales most UI elements
+DISPLAYUPDATE = 1
 
 #Defines data attributes common to cards, as well as some useful string formatting
 class card:
@@ -65,7 +75,9 @@ def loadSettings():
         global SCALE
         file = open('settings.txt')
         PAGEWAIT = int(file.readline())
+        print(debugR + 'PAGEWAIT = ' + str(PAGEWAIT))
         SCALE = float(file.readline())
+        print(debugR + 'SCALE = ' + str(SCALE))
         file.close()
 
 #Loads database info from file into listbox in GUI
@@ -107,7 +119,7 @@ def loadDatabase():
             temp.quantity = int(line.strip())
             lineNum = 0
             cards.append(temp)
-            print('Added card data: ' + temp.getString())
+            print(debugR + temp.getString())
     for item in cards:
         deckDisplay.insert(tk.END, item.name)
     file.close()
@@ -134,6 +146,7 @@ def updateDatabase():
         card.mrktPrice = mrktPrice
         card.lastUpdate = datetime.strptime(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
         card.save(fileName)
+        print(debugU + card.getString())
 
 #Scrapes image for card selected from TCGPlayer and displays in GUI
 def genImage():
@@ -142,7 +155,7 @@ def genImage():
     global deckDisplay
     global cards
     card = cards[deckDisplay.curselection()[0]]
-    print("Getting image from url: " + card.url) #Debug function
+    print(debugS + card.url)
     driver = webdriver.Chrome()
     driver.get(card.url)
     driver.maximize_window()
@@ -172,11 +185,12 @@ def addCard():
     name = search.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/div/h1")
     name = name.get_attribute("innerHTML")
     found = False
-    for card in cards:
-        if card.name == name:
-            card.quantity += 1
-            updateQuantity(card)
+    for item in cards:
+        if item.name == name:
+            item.quantity += 1
+            updateQuantity(item)
             found = True
+            print(debugU + item.getString())
     if not found:
         foil = False #temp, will allow specifying in future
         price = search.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/section[2]/section[1]/div/section[2]/span")
@@ -190,7 +204,7 @@ def addCard():
         category = "Cards" #Temp, will allow specifying in future
         place = 0 #Temp, will allow specifying in future
         new = card(name, foil, cardLink.get(), price, mrktPrice, type, rarity, category, place, datetime.strptime(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S"), 1)
-        print("Added card with data: " + new.getString()) #Debug function
+        print(debugA + new.getString())
         #Writes card to database file
         new.save(fileName)
         cards.append(new)
@@ -221,6 +235,7 @@ def updateQuantity(card):
     tempFile.close()
     file.close()
     os.remove('temp.txt')
+    print(debugU + card.getString())
 
 #Deletes card from listbox and database file. Only deleted based on name currently
 def delCard():
@@ -248,6 +263,7 @@ def delCard():
         #Rewrites temp file back to main file without deleted card
         for line in tempFile:
             file.write(line)
+        print(debugD + card.getString())
         del cards[deckDisplay.curselection()[0]] #Deletes card from list of cards in memory
         deckDisplay.delete(deckDisplay.curselection()[0]) #Deletes selected card from listbox
         tempFile.close()
@@ -261,10 +277,12 @@ def createDatabase():
     name = simpledialog.askstring(title="Database Name", prompt="Enter the name for the new database:")
     file = open(name + ".txt", "w")
     file.close()
-    file = open('settings.txt', 'w') #writing default settings to file
+    print(debugC + name + ".txt")
+    file = open('settings.txt', 'w') #Writing default settings to file
     file.write(str(PAGEWAIT) + '\n')
     file.write(str(SCALE) + '\n')
     file.close()
+    print(debugC + 'settings.txt')
 
 #Opens settings menu pop-up
 def openSettings():
@@ -319,6 +337,10 @@ def saveSettings():
     file.close()
     settings.destroy()
     scaling()
+    
+def displaySelected(event):
+    global cards
+    print(cards[deckDisplay.curselection()[0]].name + '\n')
 
 #Main entry point for program
 loadSettings()
@@ -347,6 +369,7 @@ deckLabel = tk.Label(main, text = "Cards:")
 deckLabel.grid(row = 1, column = 0)
 global deckDisplay
 deckDisplay = tk.Listbox(main, width = 100, height = 30)
+deckDisplay.bind('<<ListboxSelect>>', displaySelected)
 deckDisplay.grid(row = 2, column = 0)
 genImageButton = tk.Button(main, text = "Display card", command = genImage)
 genImageButton.grid(row = 3, column = 0)
