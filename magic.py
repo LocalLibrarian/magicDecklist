@@ -305,7 +305,7 @@ def scaling():
     global fontSize
     global SCALE
     global PAGEWAIT
-    main.geometry(str(int(round(1200 * SCALE))) + 'x' + str(int(round(650 * SCALE))))
+    main.geometry(str(int(round(1200 * SCALE))) + 'x' + str(int(round(700 * SCALE))))
     deckDisplay.config(width = int(round(100 * SCALE)), height = int(round(30 * SCALE)))
     fontSize = font.Font(size = int(round(10 * SCALE)))
     delButton.config(font = fontSize)
@@ -318,6 +318,8 @@ def scaling():
     tcgMarketPrice.config(font = fontSize)
     tcgType.config(font = fontSize)
     tcgRarity.config(font = fontSize)
+    imgButton.config(font = fontSize)
+    delImgButton.config(font = fontSize)
     main.update()
     
 def saveSettings():
@@ -344,10 +346,14 @@ def displaySelected(event):
         resized_pic = pic.resize((int(round(313 * SCALE)), int(round(437 * SCALE))), Image.ANTIALIAS)
         picture = ImageTk.PhotoImage(resized_pic)
         cardPic.config(image=picture)
-        cardPic.image = picture
-        cardPic.grid(row = 1, column = 1)
+        
     else:
-        cardPic.grid_forget()
+        pic = Image.open('default.png')
+        resized_pic = pic.resize((int(round(313 * SCALE)), int(round(437 * SCALE))), Image.ANTIALIAS)
+        picture = ImageTk.PhotoImage(resized_pic)
+        cardPic.config(image=picture)
+    cardPic.image = picture
+    cardPic.grid(row = 1, column = 1)
     tcgPriceVar.set('Price: ' + str(cards[deckDisplay.curselection()[0]].price))
     tcgMarketPriceVar.set('Market Price: ' + str(cards[deckDisplay.curselection()[0]].mrktPrice))
     tcgRarityVar.set('Rarity: ' + cards[deckDisplay.curselection()[0]].rarity)
@@ -361,6 +367,24 @@ def deleteImages():
     if os.path.exists(SUBFOLDER):
         shutil.rmtree(SUBFOLDER)
         print(debugD + SUBFOLDER)
+        
+def downloadImg():
+    global PAGEWAIT 
+    global cards
+    search = webdriver.Chrome()
+    search.get(cards[deckDisplay.curselection()[0]].url)
+    search.implicitly_wait(PAGEWAIT) #Necessary to let page load
+    #Saves screenshot of card image to file for display
+    img = search.find_element(By.XPATH, "/html/body/div[2]/div/div/section[2]/section/div/div[2]/section[1]/section/div/div/div/div/div/div/img")
+    if not os.path.exists(SUBFOLDER):
+        os.mkdir(SUBFOLDER)
+    with open(SUBFOLDER + '/' + swapChars(cards[deckDisplay.curselection()[0]].name) + '.png', 'wb') as image:
+        image.write(img.screenshot_as_png) 
+    image.close()
+    
+def delImg():
+    if os.path.exists(SUBFOLDER + '/' + swapChars(cards[deckDisplay.curselection()[0]].name) + '.png'):
+        os.remove(SUBFOLDER + '/' + swapChars(cards[deckDisplay.curselection()[0]].name) + '.png')
 
 #Main entry point for program
 loadSettings()
@@ -368,7 +392,7 @@ main = tk.Tk()
 oldDate = tk.StringVar()
 lastUpdated = tk.Label(main, textvariable=oldDate)
 lastUpdated.grid(row = 0, column = 0)
-main.geometry('1200x650')
+main.geometry('1200x700')
 main.title("Magic")
 menu = tk.Menu(main)
 #Top menu of program
@@ -380,12 +404,16 @@ menu.add_command(label = "Delete Saved Images", command = deleteImages)
 main.config(menu = menu)
 delButton = tk.Button(main, text = "Delete card", command = delCard)
 delButton.grid(row = 2, column = 0)
+delImgButton = tk.Button(main, text = "Delete picture", command = delImg)
+delImgButton.grid(row = 3, column = 0)
+imgButton = tk.Button(main, text = "Download picture", command = downloadImg)
+imgButton.grid(row = 4, column = 0)
 addButton = tk.Button(main, text = "Add new card", command = addCard)
-addButton.grid(row = 3, column = 0)
+addButton.grid(row = 5, column = 0)
 global cardLink
 cardLink = tk.Entry(main, width = 50)
 cardLink.insert(0, "Card TCGPlayer URL")
-cardLink.grid(row = 4, column = 0)
+cardLink.grid(row = 6, column = 0)
 deckLabel = tk.Label(main, text = "Cards:")
 deckLabel.grid(row = 1, column = 0)
 global deckDisplay
@@ -396,8 +424,9 @@ global cards
 cards = []
 global cardPic
 cardPic = tk.Label()
+cardPic.grid(row = 1, column = 1)
 cardInfo = tk.Frame()
-cardInfo.grid(row = 2, column = 1)
+cardInfo.grid(row = 2, column = 1, rowspan = 6)
 tcgPriceVar = tk.StringVar()
 tcgPrice = tk.Label(cardInfo, textvariable=tcgPriceVar)
 tcgPrice.grid(row = 0, column = 0)
